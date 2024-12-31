@@ -1,0 +1,37 @@
+name: gehnamall
+description: "A new Flutter project."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.5.3
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  flutter_screenutil: ^5.9.3
+  get: ^4.6.6
+  google_fonts: ^6.2.1
+  flutter_vector_icons: ^2.0.0
+  flutter_hooks: ^0.20.5
+  http: ^1.2.2
+  shimmer: ^3.0.0
+  url_launcher: ^6.3.1
+  firebase_auth: ^5.3.4
+  firebase_core: ^3.9.0
+  image_picker: ^1.1.2
+  flutter_secure_storage: ^8.1.0
+  dio: ^5.7.0
+  shared_preferences: ^2.3.4
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/icons/

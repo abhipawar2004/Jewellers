@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "551691352677",
+    "project_id": "jewelleryapp-efb37",
+    "storage_bucket": "jewelleryapp-efb37.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:551691352677:android:bcb86c6029be0da430a48c",
+        "android_client_info": {
+          "package_name": "com.example.bansal_sons"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCGxjZgHbTGSgLlxG59mmahCt_6OWc4Dck"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
