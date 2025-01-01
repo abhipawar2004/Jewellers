@@ -11,10 +11,6 @@ Widget defaultHome = MainScreen();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Register controllers
- // Register UserController
-
   runApp(const MyApp());
 }
 
