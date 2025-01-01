@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -224,4 +226,29 @@ class AuthService {
       };
     }
   }
+
+  static Future<bool> uploadImageToServer(String userId, File image) async {
+  try {
+    // Example HTTP request
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('https://api.gehnamall.com/auth/updateUser/$userId'),
+    );
+    request.fields['userId'] = userId;
+    request.files.add(await http.MultipartFile.fromPath('image', image.path));
+
+    final response = await request.send();
+
+    if (response.statusCode == 200) {
+      return true; // Success
+    } else {
+      return false; // Failure
+    }
+  } catch (e) {
+    print('Error uploading image: $e');
+    return false; // Error occurred
+  }
+}
+
+
 }

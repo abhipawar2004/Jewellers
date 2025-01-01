@@ -161,59 +161,64 @@ class _UserDetailsFormState extends State<UserDetailsForm> {
       width: double.infinity,
       height: 50,
       child: ElevatedButton(
-       onPressed: () async {
-  if (_formKey.currentState?.validate() ?? false) {
-    try {
-      // Fetch userId
-      String? userId = await AuthService.getUserId();
+        onPressed: () async {
+          if (_formKey.currentState?.validate() ?? false) {
+            try {
+              // Fetch userId
+              String? userId = await AuthService.getUserId();
 
-      if (userId == null) {
-        throw Exception('User not logged in');
-      }
+              if (userId == null) {
+                throw Exception('User not logged in');
+              }
 
-      // Prepare updated details
-      Map<String, String> updatedDetails = {
-        'email': emailController.text.trim(),
-        'gender': gender.toString(),
-        'dateOfBirth': birthDate != null
-            ? birthDate!.toIso8601String().split('T')[0] // Format as yyyy-MM-dd
-            : '',
-        'spouseDob': spouseDate != null
-            ? spouseDate!.toIso8601String().split('T')[0]
-            : '',
-        'address': addressController.text.trim(),
-        'pincode': pinCodeController.text.trim(),
-      };
+              // Prepare updated details
+              Map<String, String> updatedDetails = {
+                'email': emailController.text.trim(),
+                'gender': gender.toString(),
+                'dateOfBirth': birthDate != null
+                    ? birthDate!
+                        .toIso8601String()
+                        .split('T')[0] // Format as yyyy-MM-dd
+                    : '',
+                'spouseDob': spouseDate != null
+                    ? spouseDate!.toIso8601String().split('T')[0]
+                    : '',
+                'address': addressController.text.trim(),
+                'pincode': pinCodeController.text.trim(),
+              };
 
-      // Remove empty fields to avoid sending unnecessary data
-      updatedDetails.removeWhere((key, value) => value.isEmpty);
+              // Remove empty fields to avoid sending unnecessary data
+              updatedDetails.removeWhere((key, value) => value.isEmpty);
 
-      if (updatedDetails.isEmpty) {
-        throw Exception('No fields to update');
-      }
+              if (updatedDetails.isEmpty) {
+                throw Exception('No fields to update');
+              }
 
-      // Call the update service
-      bool success = await AuthService.updateUserDetails(userId, updatedDetails);
+              // Call the update service
+              bool success = await AuthService.updateUserDetails(
+                userId,
+                updatedDetails
+              );
 
-      // Show success or error message
-      if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('User details updated successfully!')),
-        );
-        // ignore: use_build_context_synchronously
-        Navigator.pop(context); // Go back to the previous screen
-      } else {
-        throw Exception('Failed to update user details');
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
-      );
-      print("Error updating details: $e");
-    }
-  }
-},
+              // Show success or error message
+              if (success) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content: Text('User details updated successfully!')),
+                );
 
+                Navigator.pop(context, true); // Go back to the previous screen
+              } else {
+                throw Exception('Failed to update user details');
+              }
+            } catch (e) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Error: ${e.toString()}')),
+              );
+              print("Error updating details: $e");
+            }
+          }
+        },
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.red.shade900,
           shape: RoundedRectangleBorder(

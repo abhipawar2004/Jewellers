@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../services/auth_service.dart';
 import '../authentication/login_screen.dart';
 import 'edit_detail.dart';
@@ -18,6 +18,7 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   File? selectedImage; // Variable for selected image
+  String? profileImageUrl; 
   String userName = "Loading..."; // Initial loading state for username
   String email = "Loading..."; // Initial loading state for email
   String dob = "Loading..."; // Initial loading state for dob
@@ -40,12 +41,13 @@ class _ProfilePageState extends State<ProfilePage> {
       if (response['success']) {
         setState(() {
           final data = response['data'];
-          userName = data['name'] ?? "No Name"; 
-          email = data['email'] ?? "Not set"; 
-          dob = data['dateOfBirth'] ?? "Not set"; 
-          spouseDob = data['spouseDob'] ?? "Not set"; 
-          address = data['address'] ?? "Not set"; 
-          pincode = data['pincode'] ?? "Not set"; 
+          userName = data['name'] ?? "No Name";
+          email = data['email'] ?? "Not set";
+          dob = data['dateOfBirth'] ?? "Not set";
+          spouseDob = data['spouseDob'] ?? "Not set";
+          address = data['address'] ?? "Not set";
+          pincode = data['pincode'] ?? "Not set";
+          profileImageUrl = data['image'];
         });
       } else {
         // Handle failure (e.g., show an error message)
@@ -68,6 +70,25 @@ class _ProfilePageState extends State<ProfilePage> {
       setState(() {
         selectedImage = File(pickedFile.path);
       });
+
+      final userId = await AuthService.getUserId();
+      if (userId != null) {
+        final bool uploadSuccess =
+            await AuthService.uploadImageToServer(userId, selectedImage!);
+
+        if (uploadSuccess) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Profile image updated successfully!')),
+          );
+          // Refresh user details after successful upload
+          _loadUserDetails();
+        } else {
+          // Handle upload failure (e.g., show an error message)
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to upload image')),
+          );
+        }
+      }
     }
   }
 
@@ -102,11 +123,15 @@ class _ProfilePageState extends State<ProfilePage> {
                         InkWell(
                           onTap: pickImage,
                           child: CircleAvatar(
+                            
                             maxRadius: 40.r,
                             backgroundImage: selectedImage != null
                                 ? FileImage(selectedImage!)
-                                : null,
-                            child: selectedImage == null
+                                : profileImageUrl != null
+                                    ? NetworkImage(profileImageUrl!)
+                                    : null,
+                            child: (selectedImage == null &&
+                                    profileImageUrl == null)
                                 ? Icon(
                                     Icons.add_a_photo,
                                     size: 50.h,
@@ -180,10 +205,14 @@ class _ProfilePageState extends State<ProfilePage> {
 
               // Edit Button
               ElevatedButton(
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const UserDetailsForm()),
-                ),
+                onPressed: () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const UserDetailsForm()),
+                  );
+                  _loadUserDetails(); // Refresh profile details
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red[900],
                   minimumSize: Size(double.infinity, 48.h),
@@ -204,7 +233,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   await AuthService.logout();
                   Navigator.pushReplacement(
                     context,
-                    MaterialPageRoute(builder: (context) =>  LoginScreen()),
+                    MaterialPageRoute(builder: (context) => LoginScreen()),
                   );
                 },
                 style: ElevatedButton.styleFrom(
