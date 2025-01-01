@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gehnamall/constants/constants.dart';
 import 'package:gehnamall/views/authentication/login_screen.dart';
-import 'package:gehnamall/views/entrypoint.dart';
-import 'package:gehnamall/controllers/user_controller.dart'; // Import your controller
+import 'package:gehnamall/views/entrypoint.dart';// Import your controller
 import 'package:get/get.dart';
 
 import 'services/auth_service.dart';
@@ -14,7 +13,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Register controllers
-  Get.put(UserController()); // Register UserController
+ // Register UserController
 
   runApp(const MyApp());
 }
