@@ -201,32 +201,6 @@ class AuthService {
     }
   }
 
-  static Future<Map<String, dynamic>> resendOtp(String phoneNumber) async {
-    final url = Uri.parse(
-        'https://api.gehnamall.com/auth/resendOtp?phoneNumber=$phoneNumber');
-
-    try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'phoneNumber': phoneNumber}),
-      );
-      print('Resend OTP response: ${response.body}');
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        return {'success': true, 'data': data};
-      } else {
-        return {'success': false, 'data': json.decode(response.body)};
-      }
-    } catch (e) {
-      return {
-        'success': false,
-        'data': {'message': 'Network error occurred: $e'}
-      };
-    }
-  }
-
   static Future<bool> uploadImageToServer(String userId, File image) async {
   try {
     // Example HTTP request
