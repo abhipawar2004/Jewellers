@@ -1,10 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
-
-import '../../controllers/user_controller.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/auth_service.dart';
 import '../authentication/login_screen.dart';
 import 'edit_detail.dart';
@@ -19,33 +17,57 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  final ProfileController profileController = Get.put(ProfileController());
-  final Rx<File?> selectedImage = Rx<File?>(null);
+  File? selectedImage; // Variable for selected image
+  String userName = "Loading..."; // Initial loading state for username
+  String email = "Loading..."; // Initial loading state for email
+  String dob = "Loading..."; // Initial loading state for dob
+  String spouseDob = "Loading..."; // Initial loading state for spouse dob
+  String address = "Loading..."; // Initial loading state for address
+  String pincode = "Loading..."; // Initial loading state for pincode
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserDetails(); // Load user details when the profile page is initialized
+  }
+
+  // Method to load user details using userId from SharedPreferences
+  _loadUserDetails() async {
+    final userId = await AuthService.getUserId();
+    if (userId != null) {
+      final response = await AuthService.getUserDetails(userId);
+
+      if (response['success']) {
+        setState(() {
+          final data = response['data'];
+          userName = data['name'] ?? "No Name"; 
+          email = data['email'] ?? "Not set"; 
+          dob = data['dateOfBirth'] ?? "Not set"; 
+          spouseDob = data['spouseDob'] ?? "Not set"; 
+          address = data['address'] ?? "Not set"; 
+          pincode = data['pincode'] ?? "Not set"; 
+        });
+      } else {
+        // Handle failure (e.g., show an error message)
+        setState(() {
+          userName = "Error loading data";
+          email = "Error loading data";
+        });
+      }
+    } else {
+      setState(() {
+        userName = "No user ID found";
+      });
+    }
+  }
 
   Future<void> pickImage() async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
-      selectedImage.value = File(pickedFile.path);
-    }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchUserDetails();
-  }
-
-  Future<void> _fetchUserDetails() async {
-    final userId = await AuthService.getUserId();
-    if (userId != null) {
-      await profileController.fetchUserProfile(userId);
-    } else {
-      Get.snackbar("Error", "User ID not found. Please log in again.");
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => LoginScreen()),
-      );
+      setState(() {
+        selectedImage = File(pickedFile.path);
+      });
     }
   }
 
@@ -77,36 +99,37 @@ class _ProfilePageState extends State<ProfilePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Obx(() => InkWell(
-                              onTap: pickImage,
-                              child: CircleAvatar(
-                                maxRadius: 40.r,
-                                backgroundImage: selectedImage.value != null
-                                    ? FileImage(selectedImage.value!)
-                                    : null,
-                                child: selectedImage.value == null
-                                    ? Icon(
-                                        Icons.add_a_photo,
-                                        size: 50.h,
-                                      )
-                                    : null,
-                              ),
-                            )),
+                        InkWell(
+                          onTap: pickImage,
+                          child: CircleAvatar(
+                            maxRadius: 40.r,
+                            backgroundImage: selectedImage != null
+                                ? FileImage(selectedImage!)
+                                : null,
+                            child: selectedImage == null
+                                ? Icon(
+                                    Icons.add_a_photo,
+                                    size: 50.h,
+                                  )
+                                : null,
+                          ),
+                        ),
                         SizedBox(height: 10.h),
-                        Obx(() => Text(
-                              profileController.userProfile['name'] ?? "User Name",
-                              style: TextStyle(
-                                fontSize: 20.h,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            )),
+                        Text(
+                          userName, // Dynamic username
+                          style: TextStyle(
+                            fontSize: 20.h,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         SizedBox(height: 7.h),
                         Text(
                           "Welcome to Bansal Jewellers Pvt Ltd",
                           style: TextStyle(
-                              color: kDark,
-                              fontSize: 18.sp,
-                              fontWeight: FontWeight.w500),
+                            color: kDark,
+                            fontSize: 18.sp,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ],
                     ),
@@ -126,43 +149,41 @@ class _ProfilePageState extends State<ProfilePage> {
                   elevation: 4,
                   child: Padding(
                     padding: const EdgeInsets.all(16),
-                    child: Obx(() => Column(
-                          children: [
-                            ProfileDetailRow(
-                              title: "Email",
-                              value: profileController.userProfile['email'] ?? "Not set",
-                            ),
-                            ProfileDetailRow(
-                              title: "DOB",
-                              value: profileController.userProfile['birthDate'] ??
-                                  "Not set",
-                            ),
-                            ProfileDetailRow(
-                              title: "Spouse DOB",
-                              value: profileController.userProfile['spouseDate'] ??
-                                  "Not set",
-                            ),
-                            ProfileDetailRow(
-                              title: "Address",
-                              value: profileController.userProfile['address'] ??
-                                  "Not set",
-                            ),
-                            ProfileDetailRow(
-                              title: "Pincode",
-                              value: profileController.userProfile['pinCode'] ??
-                                  "Not set",
-                            ),
-                          ],
-                        )),
+                    child: Column(
+                      children: [
+                        ProfileDetailRow(
+                          title: "Email",
+                          value: email,
+                        ),
+                        ProfileDetailRow(
+                          title: "DOB",
+                          value: dob,
+                        ),
+                        ProfileDetailRow(
+                          title: "Spouse DOB",
+                          value: spouseDob,
+                        ),
+                        ProfileDetailRow(
+                          title: "Address",
+                          value: address,
+                        ),
+                        ProfileDetailRow(
+                          title: "Pincode",
+                          value: pincode,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-
               SizedBox(height: 20.h),
 
               // Edit Button
               ElevatedButton(
-                onPressed: () => Get.to(() =>  UserDetailsForm()),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const UserDetailsForm()),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red[900],
                   minimumSize: Size(double.infinity, 48.h),
@@ -175,7 +196,6 @@ class _ProfilePageState extends State<ProfilePage> {
                   style: TextStyle(color: kWhite, fontSize: 16.sp),
                 ),
               ),
-
               SizedBox(height: 12.h),
 
               // Logout Button
@@ -184,7 +204,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   await AuthService.logout();
                   Navigator.pushReplacement(
                     context,
-                    MaterialPageRoute(builder: (context) => LoginScreen()),
+                    MaterialPageRoute(builder: (context) =>  LoginScreen()),
                   );
                 },
                 style: ElevatedButton.styleFrom(

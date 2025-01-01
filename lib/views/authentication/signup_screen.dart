@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 import '../../constants/constants.dart';
 import '../../services/auth_service.dart';
 import 'login_screen.dart';
-import 'otp_screen.dart';
+
 
 class SignupScreen extends StatefulWidget {
   final String? phoneNumber;
@@ -43,7 +43,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
   if (result['success']) {
     Get.snackbar('Success', 'User registered successfully!');
-    Get.to(() => OtpScreen(phoneNumber: phoneController.text));
+    Get.to(() => LoginScreen());
   } else {
     if (result['data']['message'] == 'User already exists') {
       Get.snackbar(

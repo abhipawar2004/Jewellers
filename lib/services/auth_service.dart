@@ -1,5 +1,3 @@
-import 'package:gehnamall/controllers/user_controller.dart';
-import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -20,7 +18,6 @@ class AuthService {
       final data = json.decode(response.body);
 
       if (response.statusCode == 200) {
-        
         return {'success': true, 'data': data};
       } else {
         return {'success': false, 'data': data};
@@ -135,36 +132,64 @@ class AuthService {
     return prefs.getString('userId'); // Returns null if userId is not found
   }
 
-  /// Update User Details
-  static Future<Map<String, dynamic>> updateUserDetails({
-    required String userId,
-    required String email,
-    required String gender,
-    required String address,
-    required String pinCode,
-    required DateTime birthDate,
-    DateTime? spouseDate,
-  }) async {
-    final url = Uri.parse('https://api.gehnamall.com/auth/updateUser/$userId');
+  static Future<bool> updateUserDetails(
+    String userId, Map<String, String> updatedDetails) async {
+  final url = Uri.parse('https://api.gehnamall.com/auth/updateUser/$userId');
 
+  try {
+    print("Request URL: $url");
+    print("Request Data: $updatedDetails");
+
+    // Create a multipart request
+    final request = http.MultipartRequest('POST', url);
+
+    // Add fields to the form-data
+    updatedDetails.forEach((key, value) {
+      request.fields[key] = value;
+    });
+
+    // Send the request
+    final response = await request.send();
+
+    // Parse the response
+    final responseBody = await response.stream.bytesToString();
+    print("Response Status Code: ${response.statusCode}");
+    print("Response Body: $responseBody");
+
+    if (response.statusCode == 200) {
+      final jsonResponse = jsonDecode(responseBody);
+      final status = jsonResponse['status'];
+      final message = jsonResponse['message'];
+
+      if (status == 0) {
+        print('Update successful: $message');
+        return true;
+      } else {
+        print('Update failed: $message');
+        return false;
+      }
+    } else {
+      print('Failed with status code: ${response.statusCode}');
+      return false;
+    }
+  } catch (e) {
+    print('Error occurred during update: $e');
+    return false;
+  }
+}
+
+  static Future<Map<String, dynamic>> getUserDetails(String userId) async {
+    final url =
+        Uri.parse('https://api.gehnamall.com/auth/getUserDetail/$userId');
     try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': email,
-          'gender': gender,
-          'address': address,
-          'pinCode': pinCode,
-          'birthDate': birthDate.toIso8601String(),
-          if (spouseDate != null) 'spouseDate': spouseDate.toIso8601String(),
-        }),
-      );
+      final response = await http.get(url);
+      final data = json.decode(response.body);
 
       if (response.statusCode == 200) {
-        return {'success': true, 'data': json.decode(response.body)};
+        print(json.decode(response.body));
+        return {'success': true, 'data': data};
       } else {
-        return {'success': false, 'data': json.decode(response.body)};
+        return {'success': false, 'data': data};
       }
     } catch (e) {
       return {
@@ -174,20 +199,29 @@ class AuthService {
     }
   }
 
+  static Future<Map<String, dynamic>> resendOtp(String phoneNumber) async {
+    final url = Uri.parse(
+        'https://api.gehnamall.com/auth/resendOtp?phoneNumber=$phoneNumber');
 
-    static Future<Map<String, dynamic>> getUserDetails(String userId) async {
-    final url = Uri.parse("https://api.gehnamall.com/auth/getUserDetail/$userId");
     try {
-      final response = await http.get(url);
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'phoneNumber': phoneNumber}),
+      );
+      print('Resend OTP response: ${response.body}');
 
       if (response.statusCode == 200) {
-        return {'success': true, 'data': json.decode(response.body)};
+        final data = json.decode(response.body);
+        return {'success': true, 'data': data};
       } else {
-        return {'success': false, 'message': 'Failed to fetch user details'};
+        return {'success': false, 'data': json.decode(response.body)};
       }
     } catch (e) {
-      return {'success': false, 'message': 'Network error: $e'};
+      return {
+        'success': false,
+        'data': {'message': 'Network error occurred: $e'}
+      };
     }
   }
-
 }

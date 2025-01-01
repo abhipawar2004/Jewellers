@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../controllers/user_controller.dart';
 import '../../services/auth_service.dart';
 
 class UserDetailsForm extends StatefulWidget {
@@ -12,7 +11,6 @@ class UserDetailsForm extends StatefulWidget {
 
 class _UserDetailsFormState extends State<UserDetailsForm> {
   final _formKey = GlobalKey<FormState>();
-  final UserController userController = Get.find<UserController>();
 
   // Form field controllers
   final TextEditingController emailController = TextEditingController();
@@ -20,21 +18,9 @@ class _UserDetailsFormState extends State<UserDetailsForm> {
   final TextEditingController pinCodeController = TextEditingController();
 
   // Other variables
-  String gender = 'Male';
+  String? gender;
   DateTime? birthDate;
   DateTime? spouseDate;
-
-  @override
-  void initState() {
-    super.initState();
-    // Initialize controllers with existing values
-    emailController.text = userController.email.value ?? '';
-    addressController.text = userController.address.value ?? '';
-    pinCodeController.text = userController.pinCode.value ?? '';
-    gender = userController.gender.value ?? 'Male';
-    birthDate = userController.birthDate.value;
-    spouseDate = userController.spouseDate.value;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,40 +39,30 @@ class _UserDetailsFormState extends State<UserDetailsForm> {
               children: [
                 _buildLabel('Email'),
                 _buildEmailField(),
-
                 const SizedBox(height: 16),
-
                 _buildLabel('Gender'),
                 _buildGenderDropdown(),
-
                 const SizedBox(height: 16),
-
                 _buildLabel('Birth Date'),
                 _buildDateField(
                   date: birthDate,
                   onDateSelected: (date) => setState(() => birthDate = date),
                   hintText: 'Select Date',
                 ),
-
                 const SizedBox(height: 16),
-
                 _buildLabel('Spouse Date'),
                 _buildDateField(
                   date: spouseDate,
                   onDateSelected: (date) => setState(() => spouseDate = date),
                   hintText: 'Select Date',
                 ),
-
                 const SizedBox(height: 16),
-
                 _buildLabel('Address'),
                 _buildTextField(
                   controller: addressController,
                   hint: 'Enter your address',
                 ),
-
                 const SizedBox(height: 16),
-
                 _buildLabel('Pin Code'),
                 _buildTextField(
                   controller: pinCodeController,
@@ -101,9 +77,7 @@ class _UserDetailsFormState extends State<UserDetailsForm> {
                     return null;
                   },
                 ),
-
                 const SizedBox(height: 24),
-
                 _buildSubmitButton(),
               ],
             ),
@@ -187,7 +161,59 @@ class _UserDetailsFormState extends State<UserDetailsForm> {
       width: double.infinity,
       height: 50,
       child: ElevatedButton(
-        onPressed: _handleSubmit,
+       onPressed: () async {
+  if (_formKey.currentState?.validate() ?? false) {
+    try {
+      // Fetch userId
+      String? userId = await AuthService.getUserId();
+
+      if (userId == null) {
+        throw Exception('User not logged in');
+      }
+
+      // Prepare updated details
+      Map<String, String> updatedDetails = {
+        'email': emailController.text.trim(),
+        'gender': gender.toString(),
+        'dateOfBirth': birthDate != null
+            ? birthDate!.toIso8601String().split('T')[0] // Format as yyyy-MM-dd
+            : '',
+        'spouseDob': spouseDate != null
+            ? spouseDate!.toIso8601String().split('T')[0]
+            : '',
+        'address': addressController.text.trim(),
+        'pincode': pinCodeController.text.trim(),
+      };
+
+      // Remove empty fields to avoid sending unnecessary data
+      updatedDetails.removeWhere((key, value) => value.isEmpty);
+
+      if (updatedDetails.isEmpty) {
+        throw Exception('No fields to update');
+      }
+
+      // Call the update service
+      bool success = await AuthService.updateUserDetails(userId, updatedDetails);
+
+      // Show success or error message
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('User details updated successfully!')),
+        );
+        // ignore: use_build_context_synchronously
+        Navigator.pop(context); // Go back to the previous screen
+      } else {
+        throw Exception('Failed to update user details');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${e.toString()}')),
+      );
+      print("Error updating details: $e");
+    }
+  }
+},
+
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.red.shade900,
           shape: RoundedRectangleBorder(
@@ -219,49 +245,6 @@ class _UserDetailsFormState extends State<UserDetailsForm> {
         borderSide: const BorderSide(color: Colors.red),
       ),
     );
-  }
-
-  Future<void> _handleSubmit() async {
-    if (_formKey.currentState!.validate()) {
-      try {
-        final userId = await AuthService.getUserId();
-
-        if (userId == null || userId.isEmpty) {
-          Get.snackbar("Error", "User ID not found. Please log in again.");
-          return;
-        }
-
-        final response = await AuthService.updateUserDetails(
-          userId: userId,
-          email: emailController.text,
-          gender: gender,
-          address: addressController.text,
-          pinCode: pinCodeController.text,
-          birthDate: birthDate!,
-          spouseDate: spouseDate,
-        );
-
-        if (response['success']) {
-          userController.updateUserDetails(
-            email: emailController.text,
-            gender: gender,
-            address: addressController.text,
-            pinCode: pinCodeController.text,
-            birthDate: birthDate,
-            spouseDate: spouseDate,
-          );
-
-          Get.back();
-          Get.snackbar("Success", "User details updated successfully.");
-        } else {
-          final message = response['data']['message'] ??
-              "Failed to update details. Please try again.";
-          Get.snackbar("Error", message);
-        }
-      } catch (e) {
-        Get.snackbar("Error", "An error occurred: ${e.toString()}");
-      }
-    }
   }
 
   @override

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:gehnamall/main.dart';
 import 'package:gehnamall/views/entrypoint.dart';
 import 'package:get/get.dart';
 
@@ -20,6 +19,9 @@ class _OtpScreenState extends State<OtpScreen> {
   final List<FocusNode> focusNodes = List.generate(3, (index) => FocusNode());
 
   bool isLoading = false;
+
+  // Add a new variable to control OTP resend status
+  bool isResendLoading = false;
 
   void handleOtpVerification() async {
     String otp = otpFields.map((controller) => controller.text).join();
@@ -43,16 +45,36 @@ class _OtpScreenState extends State<OtpScreen> {
       showDialog(
         context: context,
         builder: (_) => AlertDialog(
-          title: Text('Error'),
+          title: const Text('Error'),
           content: Text(message),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text('OK'),
+              child: const Text('OK'),
             ),
           ],
         ),
       );
+    }
+  }
+
+  // Resend OTP handler
+  void handleResendOtp() async {
+    setState(() {
+      isResendLoading = true; // Show loading indicator
+    });
+
+    final result = await AuthService.resendOtp(widget.phoneNumber);
+
+    setState(() {
+      isResendLoading = false; // Hide loading indicator
+    });
+
+    if (result['success']) {
+      Get.snackbar('Success', 'OTP has been resent to your phone');
+    } else {
+      String message = result['data']['message'] ?? 'Failed to resend OTP';
+      Get.snackbar('Error', message);
     }
   }
 
@@ -96,7 +118,7 @@ class _OtpScreenState extends State<OtpScreen> {
               const SizedBox(height: 20),
 
               // OTP Input Fields
-              Container(
+              SizedBox(
                 width: 240,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -117,7 +139,6 @@ class _OtpScreenState extends State<OtpScreen> {
                         ),
                         onChanged: (value) {
                           if (value.isNotEmpty) {
-                            // Move to the next field if available
                             if (index < 2) {
                               FocusScope.of(context)
                                   .requestFocus(focusNodes[index + 1]);
@@ -133,19 +154,25 @@ class _OtpScreenState extends State<OtpScreen> {
               ),
               const SizedBox(height: 20),
 
-              // Resend OTP
-              const Text.rich(
-                TextSpan(
-                  text: "Didn't receive OTP? ",
-                  style: TextStyle(fontSize: 18, color: Colors.black54),
-                  children: [
-                    TextSpan(
-                      text: "Resend OTP",
-                      style: TextStyle(fontSize: 18, color: Colors.blue),
+              // Resend OTP Button
+              isResendLoading
+                  ? const CircularProgressIndicator()
+                  : InkWell(
+                      onTap: handleResendOtp,
+                      child: const Text.rich(
+                        TextSpan(
+                          text: "Didn't receive OTP? ",
+                          style: TextStyle(fontSize: 18, color: Colors.black54),
+                          children: [
+                            TextSpan(
+                              text: "Resend OTP",
+                              style:
+                                  TextStyle(fontSize: 18, color: Colors.blue),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ],
-                ),
-              ),
               const SizedBox(height: 20),
 
               // Verify Button

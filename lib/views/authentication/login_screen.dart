@@ -5,7 +5,7 @@ import '../../constants/constants.dart';
 import '../../main.dart';
 
 import '../../services/auth_service.dart';
-import 'otp_screen.dart'; // We'll create this later
+import 'otp_screen.dart'; 
 
 class LoginScreen extends StatefulWidget {
   @override
